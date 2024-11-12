@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:DominoPathDrawApp;assembly=DominoPathDrawApp"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:mct="clr-namespace:CommunityToolkit.Maui.Views;assembly=CommunityToolkit.Maui"
+             x:Class="DominoPathDrawApp.DrawDrive"
+             Title="Draw Drive">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="300" />
+      <RowDefinition Height="100" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <local:BleConnectView x:Name="BleConnect"
+        Grid.Column="0"
+        Grid.Row="0"
+    />
+
+    <mct:DrawingView
+        Grid.Column="0"
+        Grid.Row="1"
+        x:Name="DrawInput"
+        Margin="0,50,0,100"
+        BackgroundColor="LightGray"
+        WidthRequest="200"
+        HeightRequest="200"
+        HorizontalOptions="Center"
+        DrawingLineCompleted="DrawInput_DrawingLineCompleted"
+    />
+
+    <HorizontalStackLayout 
+        Grid.Column="0"
+        Grid.Row="1" HorizontalOptions="Center"
+        VerticalOptions="End">
+      <Label
+          Text="Scale:"
+          FontSize="Medium"
+          Margin="50,0,10,0"
+          HorizontalOptions="Center"
+          VerticalOptions="Center"
+      />
+      <Slider
+          Minimum="10"
+          Maximum="100"
+          Value="50"
+          WidthRequest="200"
+          x:Name="DrawScale"
+      />
+    </HorizontalStackLayout>
+
+    <Button
+        Grid.Column="0"
+        Grid.Row="2"
+        x:Name="SendPathButton"
+        Text="Send Path"
+        Clicked="SendPathButton_Clicked"
+        Margin="30,0,30,10"
+        BackgroundColor="Blue"
+        HeightRequest="50"
+        WidthRequest="200"
+        IsEnabled="False"
+    />
+
+    <local:CommonDriveView
+        Grid.Column="0"
+        Grid.Row="3"
+        x:Name="DriveControls"
+        IsEnabled="False"
+    />
+
+  </Grid>
+</ContentPage>

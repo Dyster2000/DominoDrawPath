@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TabbedPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+            xmlns:local="clr-namespace:DominoPathDrawApp;assembly=DominoPathDrawApp"
+            xmlns:android="clr-namespace:Microsoft.Maui.Controls.PlatformConfiguration.AndroidSpecific;assembly=Microsoft.Maui.Controls"
+            android:TabbedPage.ToolbarPlacement="Bottom"
+            x:Class="DominoPathDrawApp.MainTabPage">
+
+  <NavigationPage Title="Manual Drive">
+    <x:Arguments>
+      <local:ManualDrive x:Name="Manual" Title="Manual Drive" />
+    </x:Arguments>
+  </NavigationPage>
+  <NavigationPage Title="Draw Drive">
+    <x:Arguments>
+      <local:DrawDrive x:Name="Draw" Title="Draw Drive" />
+    </x:Arguments>
+  </NavigationPage>
+
+</TabbedPage>

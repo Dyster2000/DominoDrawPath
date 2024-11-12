@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:DominoPathDrawApp;assembly=DominoPathDrawApp"
+             xmlns:gauge="clr-namespace:Syncfusion.Maui.Gauges;assembly=Syncfusion.Maui.Gauges"
+             x:Class="DominoPathDrawApp.ManualDrive"
+             Title="Manual Drive">
+  <VerticalStackLayout>
+
+    <local:BleConnectView x:Name="BleConnect" />
+
+    <gauge:SfRadialGauge BackgroundColor="White">
+      <gauge:SfRadialGauge.Axes>
+        <gauge:RadialAxis
+            ShowTicks="False"
+            StartAngle="200"
+            EndAngle="340"
+            ShowLabels="False"
+            Minimum="10"
+            Maximum="90">
+
+          <gauge:RadialAxis.AxisLineStyle>
+            <gauge:RadialLineStyle
+                Fill="#2194f3"
+                Thickness="8"
+            />
+          </gauge:RadialAxis.AxisLineStyle>
+
+          <gauge:RadialAxis.Pointers>
+            <gauge:RangePointer 
+                Value="{Binding Source={x:Reference markerPointer}, Path=Value}"
+                ValueChanged="RangePointer_ValueChanged"
+                CornerStyle="BothCurve"
+                Fill="#2194f3"
+                PointerWidth="8"
+            />
+            <gauge:ShapePointer 
+                x:Name="markerPointer"
+                ShapeType="Circle"
+                HasShadow="True"
+                Value="50"
+                IsInteractive="True"
+                ShapeHeight="30"
+                ShapeWidth="30"
+                Fill="#0000ff"
+            />
+          </gauge:RadialAxis.Pointers>
+
+          <gauge:RadialAxis.Annotations>
+            <gauge:GaugeAnnotation>
+              <gauge:GaugeAnnotation.Content>
+                <Label Text="Steering"/>
+              </gauge:GaugeAnnotation.Content>
+            </gauge:GaugeAnnotation>
+          </gauge:RadialAxis.Annotations>
+
+        </gauge:RadialAxis>
+      </gauge:SfRadialGauge.Axes>
+    </gauge:SfRadialGauge>
+
+    <local:CommonDriveView x:Name="DriveControls" IsEnabled="False" />
+
+  </VerticalStackLayout>
+</ContentPage>

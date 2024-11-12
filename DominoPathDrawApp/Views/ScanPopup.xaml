@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               x:Class="DominoPathDrawApp.ScanPopup"
+               CanBeDismissedByTappingOutsideOfPopup="False">
+
+  <VerticalStackLayout WidthRequest="300" HeightRequest="250">
+    <Label x:Name="Message" Text="Scanning for domino robot..." HorizontalTextAlignment="Center" FontSize="Large" Margin="10,30,10,30" />
+
+    <Button x:Name="CancelButton" Text="Cancel Search" Margin="20,30,20,30" Clicked="CancelButton_Clicked" />
+  </VerticalStackLayout>
+
+</toolkit:Popup>
