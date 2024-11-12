@@ -26,14 +26,7 @@ public class DominoStatusData
 
     public bool JustConnected { get; set; }
 
-    public event Notify ODataChanged;
-    //public event Notify OnMovingChanged;
-    //public event Notify OnDispensingChanged;
-    //public event Notify OnStopOnEmptyChanged;
-    //public event Notify OnIsEmptyChanged;
-    //public event Notify OnManualModeChanged;
-    //public event Notify OnDirectionChanged;
-    //public event Notify OnDistanceTraveledChanged;
+    public event Notify OnDataChanged;
 
     public DominoStatusData()
     {
@@ -55,14 +48,6 @@ public class DominoStatusData
             var direction = buffer.ReadByte(ref offset);
             var distanceTraveled = buffer.ReadUInt32(ref offset);
 
-            //var movingChanged = Moving != moving || JustConnected;
-            //var dispensingChanged = Dispensing != dispensing || JustConnected;
-            //var stopOnEmptyChanged = StopOnEmpty != stopOnEmpty || JustConnected;
-            //var isEmptyChanged = IsEmpty != isEmpty || JustConnected;
-            //var manualModeChanged = ManualMode != manualMode || JustConnected;
-            //var directionChanged = Direction != direction || JustConnected;
-            //var distanceTraveledChanged = DistanceTraveled != distanceTraveled || JustConnected;
-
             var dataChanged = JustConnected;
             dataChanged = dataChanged || Moving != moving;
             dataChanged = dataChanged || Dispensing != dispensing;
@@ -81,21 +66,7 @@ public class DominoStatusData
             DistanceTraveled = distanceTraveled;
 
             if (dataChanged)
-                ODataChanged?.Invoke();
-            //if (movingChanged)
-            //    OnMovingChanged?.Invoke();
-            //if (dispensingChanged)
-            //    OnDispensingChanged?.Invoke();
-            //if (stopOnEmptyChanged)
-            //    OnStopOnEmptyChanged?.Invoke();
-            //if (isEmptyChanged)
-            //    OnIsEmptyChanged?.Invoke();
-            //if (manualModeChanged)
-            //    OnManualModeChanged?.Invoke();
-            //if (directionChanged)
-            //    OnDirectionChanged?.Invoke();
-            //if (distanceTraveledChanged)
-            //    OnDistanceTraveledChanged?.Invoke();
+                OnDataChanged?.Invoke();
 
             JustConnected = false;
         }

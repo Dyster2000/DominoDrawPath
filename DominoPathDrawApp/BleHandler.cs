@@ -85,7 +85,6 @@ public class BleHandler
         }
         catch (Exception ex)
         {
-            // logger.LogError(ex);
             return false;
         }
     }
@@ -96,18 +95,10 @@ public class BleHandler
         {
             lock (WriteSync)
             {
-                Console.WriteLine("[BleHandler::SendManualCommand] Write data");
                 byte[] data = ManualCommandData.Write(manualMode);
                 _ManualControlCharacteristic.WriteType = CharacteristicWriteType.WithoutResponse;
                 _ManualControlCharacteristic.WriteAsync(data);
             }
-        }
-        else
-        {
-            if (_ManualControlCharacteristic == null)
-                Console.WriteLine("[BleHandler::SendManualCommand] FAIL: Is null");
-            else if (!_ManualControlCharacteristic.CanWrite)
-                Console.WriteLine("[BleHandler::SendManualCommand] FAIL: CanWrite is false");
         }
     }
 
@@ -119,11 +110,8 @@ public class BleHandler
 
             for (int i = 0; i < len; i += DominoDrawCommandData.MaxPoints)
             {
-                //Console.WriteLine($"[BleHandler::SendDrawCommand] Call DrawCommandData.Write({i}) src len={len}");
                 var data = DrawCommandData.Write(i);
 
-                //Console.WriteLine($"[BleHandler::SendDrawCommand] Write data: offset={i} len={data.Length}");
-                //Console.WriteLine("[{0}]", string.Join(", ", data));
                 await _DrawControlCharacteristic.WriteAsync(data);
             }
         }
@@ -169,18 +157,14 @@ public class BleHandler
 
         _Popup = popup;
 
-        Console.WriteLine("[BleHandler::Scan] Enter");
         if (!await PermissionsGrantedAsync())
         {
             await _Owner.DisplayAlert("Permission required", "Application needs location permission", "OK");
-            //IsBusyIndicator.IsVisible = IsBusyIndicator.IsRunning = !(ScanButton.IsEnabled = true);
             return;
         }
 
         if ((_DominoDevice == null) && (!_bluetoothAdapter.IsScanning))
         {
-            Console.WriteLine("[BleHandler::Scan] Call StartScanningForDevicesAsync");
-
             ScanFilterOptions scanOptions = new ScanFilterOptions();
             scanOptions.DeviceNames = [DEVICE_NAME];
             CancelControl = new CancellationTokenSource();
@@ -189,26 +173,20 @@ public class BleHandler
         }
         if (_DominoDevice == null)
         {
-            Console.WriteLine("[BleHandler::Scan] DominoDevice not found");
             CancelControl = null;
             return;
         }
         // Found robot
-        Console.WriteLine("[BleHandler::Scan] Call StopScanningForDevicesAsync");
         await _bluetoothAdapter.StopScanningForDevicesAsync();
-        Console.WriteLine("[BleHandler::Scan] Call ConnectToDeviceAsync");
         await _bluetoothAdapter.ConnectToDeviceAsync(_DominoDevice);
-        Console.WriteLine("[BleHandler::Scan] Call FindService");
         await FindService();
         if (_DominoService != null)
         {
-            Console.WriteLine("[BleHandler::Scan] Call FindCharacteristics");
             await FindCharacteristics();
         }
 
         CancelControl = null;
         StatusData.JustConnected = true;
-        Console.WriteLine("[BleHandler Scan] Handle connect");
         OnConnected?.Invoke();
 
         if (_StatusCharacteristic != null && _StatusCharacteristic.CanUpdate)
@@ -227,7 +205,6 @@ public class BleHandler
 
     private void FoundRobot(IDevice device)
     {
-        Console.WriteLine("[BleHandler::FoundRobot] Found Robot, looking for service");
         _Popup.SetMessage("Found Robot, looking for service");
         _DominoDevice = device;
         CancelControl.Cancel();
@@ -241,10 +218,8 @@ public class BleHandler
         }
         try
         {
-            Console.WriteLine("[BleHandler::FindService] Call GetServicesAsync");
             var servicesListReadOnly = await _DominoDevice.GetServicesAsync();
 
-            Console.WriteLine($"[BleHandler::FindService] servicesListReadOnly.Count={servicesListReadOnly.Count}");
             for (int i = 0; i < servicesListReadOnly.Count; i++)
             {
                 if (servicesListReadOnly[i].Id == SERVICE_UUID)
@@ -269,26 +244,22 @@ public class BleHandler
         }
         try
         {
-            Console.WriteLine("[BleHandler::FindCharacteristics] Call GetCharacteristicsAsync");
             var charListReadOnly = await _DominoService.GetCharacteristicsAsync();
 
             for (int i = 0; i < charListReadOnly.Count; i++)
             {
                 if (charListReadOnly[i].Id == STATUS_CHARACTERISTIC_UUID)
                 {
-                    Console.WriteLine("[BleHandler::FindCharacteristics] Found Status Characteristics");
                     _Popup.SetMessage("Found Status Characteristics");
                     _StatusCharacteristic = charListReadOnly[i];
                 }
                 else if (charListReadOnly[i].Id == MANUAL_CONTROL_CHARACTERISTIC_UUID)
                 {
-                    Console.WriteLine("[BleHandler::FindCharacteristics] Found Manual Control Characteristics");
                     _Popup.SetMessage("Found Manual Control Characteristics");
                     _ManualControlCharacteristic = charListReadOnly[i];
                 }
                 else if (charListReadOnly[i].Id == DRAW_CONTROL_CHARACTERISTIC_UUID)
                 {
-                    Console.WriteLine("[BleHandler::FindCharacteristics] Found Draw Control Characteristics");
                     _Popup.SetMessage("Found Draw Control Characteristics");
                     _DrawControlCharacteristic = charListReadOnly[i];
                 }
@@ -316,7 +287,6 @@ public class BleHandler
     {
         if (IsConnected)
         {
-            Console.WriteLine("[BleHandler] Handle disconnect");
             _DominoDevice = null;
             _DominoService = null;
             _StatusCharacteristic = null;

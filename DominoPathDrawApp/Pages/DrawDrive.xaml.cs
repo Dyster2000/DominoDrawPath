@@ -132,26 +132,6 @@ public partial class DrawDrive : ContentPage
         }
 
         Ble.DrawCommandData.DrivePath = drivePath;
-        var pointStr = string.Join(", ", debugPoints);
-        var pathStr = string.Join(", ", Ble.DrawCommandData.DrivePath);
-
-        Console.Write("points = [");
-        while (pointStr.Length > 1000)
-        {
-            var part = pointStr.Substring(0, 1000);
-            Console.WriteLine("{0}", part);
-            pointStr = pointStr.Substring(1000);
-        }
-        Console.WriteLine("{0}]", pointStr);
-
-        Console.Write("path = [");
-        while (pathStr.Length > 1000)
-        {
-            var part = pathStr.Substring(0, 1000);
-            Console.WriteLine("{0}", part);
-            pathStr = pathStr.Substring(1000);
-        }
-        Console.WriteLine("{0}]", pathStr);
 
         DriveControls.EnableMoving(false);
 
@@ -162,7 +142,6 @@ public partial class DrawDrive : ContentPage
 
     private void Ble_OnConnected()
     {
-        Console.WriteLine("[BleConnectView::Ble_OnConnected] Handle connect");
         MainThread.BeginInvokeOnMainThread(() =>
         {
             SendPathButton.IsEnabled = _Points.Count > 0;
@@ -171,7 +150,6 @@ public partial class DrawDrive : ContentPage
 
     private void Ble_OnDisconnected()
     {
-        Console.WriteLine("[BleConnectView::Ble_OnDisconnected] Handle disconnect");
         MainThread.BeginInvokeOnMainThread(() =>
         {
             SendPathButton.IsEnabled = false;

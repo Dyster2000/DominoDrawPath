@@ -43,31 +43,17 @@ void ManualControlHandler::Loop(uint32_t deltaTime)
     if (m_Data.ManualMode)
       m_Data.Direction = m_ReceivedData.Direction;
 
-    /*Serial.print("[ManualControlHandler] RecvMoving=");
-    Serial.print(m_ReceivedData.Moving);
-    Serial.print(", CurrentMoving=");
-    Serial.print(m_Data.Moving);
-    Serial.print(", ManualMode=");
-    Serial.println(m_Data.ManualMode);
-    Serial.print(", IsEmpty=");
-    Serial.print(m_Data.IsEmpty);
-    Serial.print(", StopOnEmpty=");
-    Serial.println(m_Data.StopOnEmpty);*/
-
     // Check if not moving and requesting to move
     if (m_ReceivedData.Moving && !m_Data.Moving)
     {
       if (!m_Data.IsEmpty || !m_Data.StopOnEmpty)
       {
         m_Data.Moving = true;
-        //Serial.print("Start moving, dir=");
-        //Serial.println(m_Data.Direction);
       }
     }
     else if (!m_ReceivedData.Moving && m_Data.Moving)
     {
       m_Data.Moving = false;
-      //Serial.println("Stop moving");
     }
   }
 }

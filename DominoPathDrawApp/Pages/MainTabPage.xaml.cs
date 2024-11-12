@@ -41,7 +41,6 @@ public partial class MainTabPage : TabbedPage
         }
         catch (Exception ex)
         {
-            // logger.LogError(ex);
             return false;
         }
     }
@@ -55,7 +54,6 @@ public partial class MainTabPage : TabbedPage
         }
         catch (Exception ex)
         {
-            // logger.LogError(ex);
             return false;
         }
     }

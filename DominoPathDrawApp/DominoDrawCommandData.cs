@@ -45,22 +45,15 @@ public class DominoDrawCommandData
         int cnt = Math.Min(DrivePath.Count - startIndex, MaxPoints);
         int offset = 0;
 
-        //Console.WriteLine($"[DominoDrawCommandData::Write] Create MessageBuffer size {HeaderSize + cnt * 4}");
         Buffer = new MessageBuffer(HeaderSize + cnt * 4);
 
-        //Console.WriteLine($"[DominoDrawCommandData::Write] Encode data {startIndex} to {startIndex + cnt}, DrivePath len={DrivePath.Count}");
-        //Console.WriteLine($"[DominoDrawCommandData::Write] Add Offset: offset={offset}");
         offset = Buffer.Write(offset, (UInt16)startIndex);
-        //Console.WriteLine($"[DominoDrawCommandData::Write] Add TotalSize: offset={offset}");
         offset = Buffer.Write(offset, (UInt16)DrivePath.Count);
         for (int i = 0; i < cnt; i++)
         {
-            //Console.WriteLine($"[DominoDrawCommandData::Write] Add X({i}): offset={offset}");
             offset = Buffer.Write(offset, DrivePath[startIndex + i].DistanceMM);
-            //Console.WriteLine($"[DominoDrawCommandData::Write] Add Y({i}): offset={offset}");
             offset = Buffer.Write(offset, DrivePath[startIndex + i].Angle);
         }
-        //Console.WriteLine($"[DominoDrawCommandData::Write] End offset={offset}");
 
         return Buffer.GetData();
     }

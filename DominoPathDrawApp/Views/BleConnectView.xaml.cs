@@ -54,7 +54,6 @@ public partial class BleConnectView : ContentView
 
     private void Ble_OnConnected()
     {
-        Console.WriteLine("[BleConnectView::Ble_OnConnected] Handle connect");
         MainThread.BeginInvokeOnMainThread(() =>
         {
             ConnectLabel.Text = "Connected";
@@ -65,7 +64,6 @@ public partial class BleConnectView : ContentView
 
     private void Ble_OnDisconnected()
     {
-        Console.WriteLine("[BleConnectView::Ble_OnDisconnected] Handle disconnect");
         MainThread.BeginInvokeOnMainThread(() =>
         {
             ConnectLabel.Text = "Not Connected";

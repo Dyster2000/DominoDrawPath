@@ -115,14 +115,6 @@ void loop()
   // Handle movement
   if (data.Moving)
   {
-    /*if (debugCnt < 10)
-    {
-      debugCnt++;
-      Serial.print("curTimeUS=");
-      Serial.print(curTimeUS);
-      Serial.print(", curTimeMS=");
-      Serial.println(curTimeMS);
-    }*/
     // Calculate motor speeds based on the control signal
     int leftMotorSpeed = TOP_SPEED + data.Direction;
     int rightMotorSpeed = TOP_SPEED - data.Direction;
@@ -133,12 +125,6 @@ void loop()
 
     if (leftMotorSpeed != lastLeftMotorSpeed || rightMotorSpeed != lastRightMotorSpeed)
     {
-      /*Serial.print("Left speed=");
-      Serial.print(leftMotorSpeed);
-      Serial.print(", Right speed=");
-      Serial.print(rightMotorSpeed);
-      Serial.print(", Dir=");
-      Serial.println(data.Direction);*/
       lastLeftMotorSpeed = leftMotorSpeed;
       lastRightMotorSpeed = rightMotorSpeed;
 
@@ -152,45 +138,8 @@ void loop()
     RemainingDistanceTraveledNM += combinedmotorspeed * deltaTimeUS * NM_PER_MS / 1000;
     uint32_t distanceMM = RemainingDistanceTraveledNM / 1000000UL;
     RemainingDistanceTraveledNM -= distanceMM * 1000000UL;
-    // DistanceTraveledNM += distanceUM;
     data.DistanceTraveledMM += distanceMM;
     distanceSinceLastDrop += distanceMM;
-
-    /*uint32_t curSec = curTimeUS / 1000000;
-    if (debugSec != curSec)
-    {
-      debugSec = curSec;
-      //debugCnt = 0;
-      seconds++;
-
-      //Serial.print("curTimeUS=");
-      //Serial.print(curTimeUS);
-      //Serial.print(", lastTimeUS=");
-      //Serial.print(lastTimeUS_Save);
-      Serial.print("deltaTimeUS=");
-      Serial.print(deltaTimeUS);
-      //Serial.print(", combinedmotorspeed=");
-      //Serial.print(combinedmotorspeed);
-      //Serial.print(", seconds=");
-      //Serial.print(seconds);
-      //uint32_t test1 = combinedmotorspeed * deltaTimeUS;
-      //Serial.print(", test1=");
-      //Serial.print(test1);
-      //Serial.print(", distanceUM=");
-      //Serial.print(distanceUM);
-      //Serial.print(", distanceUM=");
-      //Serial.print(distanceUM);
-
-      Serial.print("distanceNM=");
-      Serial.print(distanceNM);
-      Serial.print("DistanceTraveledMM=");
-      Serial.print(data.DistanceTraveledMM);
-      Serial.print(", RemainingDistanceTraveledNM=");
-      Serial.print(RemainingDistanceTraveledNM);
-      int32_t diff = (int32_t)MM_PER_SEC * (seconds - 1) - (int32_t)data.DistanceTraveledMM;
-      Serial.print(", diff=");
-      Serial.println(diff);
-    }*/
 
     // Handle domino dispensing
     if (data.Dispensing)

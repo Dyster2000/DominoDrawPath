@@ -38,19 +38,6 @@ void DrawControlHandler::Loop(uint32_t deltaTimeUS)
 {
   if (m_ReceivedDataUpdated)
   {
-    /*Serial.print("[DrawControlHandler::Loop] Got Points: Len=");
-    Serial.println(m_Points.size());
-    Serial.print("Data: ");
-    for (uint16_t i = 0; i < m_Points.size(); i++)
-    {
-      if (i > 0)
-        Serial.print(", ");
-      Serial.print("(");
-      Serial.print(m_Points[i].X);
-      Serial.print(",");
-      Serial.print(m_Points[i].Y);
-      Serial.print(")");
-    }*/
     if (m_Steps.size() > 0)
     {
       Serial.print("[DrawControlHandler::Loop] Setup new path: 0/");
@@ -90,25 +77,6 @@ void DrawControlHandler::Loop(uint32_t deltaTimeUS)
       }
       else if (m_Data.Direction != 0)
       {
-        /*static int debugCnt = 0;
-
-        if (m_Data.Direction > 10 || m_Data.Direction < -10)
-        {
-          if (debugCnt++ < 30)
-          {
-            Serial.print("deltaTimeUS=");
-            Serial.print(deltaTimeUS);
-            Serial.print(", Direction=");
-            Serial.print(m_Data.Direction);
-            Serial.print(", CurrentAngle=");
-            Serial.print(m_CurrentAngle);
-            float adj = MicrosPerTurnDegree * deltaTimeUS * m_Data.Direction;
-            float newCurrentAngle = m_CurrentAngle + adj;
-            Serial.print(", NewCurrentAngle=");
-            Serial.println(newCurrentAngle);
-          }
-        }*/
-
         m_CurrentAngle -= MicrosPerTurnDegree * deltaTimeUS * m_Data.Direction;
 
         float diff = fabs(m_TargetAngle - m_CurrentAngle);
@@ -150,36 +118,10 @@ void DrawControlHandler::SetNextStep()
       angleDiff *= 3;
     else if (m_DistanceForNextStep < 10)
       angleDiff *= 2;
-    //auto distAdjust = m_DistanceForNextStep;
     angleDiff = constrain(angleDiff, -80, 80);
     m_Data.Direction = (int8_t)angleDiff;
     m_LastDiff = fabs(m_TargetAngle - m_CurrentAngle);
   }
-
-  Serial.print("[DrawControlHandler::Loop] Change to step: ");
-  Serial.print(m_StepElapsedTimeUS);
-  Serial.print(" us: ");
-  Serial.print(m_CurrentIndex);
-  Serial.print("/");
-  Serial.print(m_Steps.size());
-  Serial.print(": dir=");
-  Serial.print(m_Data.Direction);
-  Serial.print(", distMM=");
-  Serial.print(m_Steps[m_CurrentIndex].DistanceMM);
-
-  Serial.print(", m_TargetAngle=");
-  Serial.print(m_TargetAngle);
-  Serial.print(", m_CurrentAngle=");
-  Serial.print(m_CurrentAngle);
-  Serial.print(", Direction=");
-  Serial.println(m_Data.Direction);
-
-  /*Serial.print(", DistanceTraveled=");
-  Serial.print(m_Data.DistanceTraveledMM);
-  Serial.print(", DistanceForNextStep=");
-  Serial.print(m_DistanceForNextStep);
-  Serial.print(", distMM=");
-  Serial.println(m_Steps[m_CurrentIndex].DistanceMM);*/
 
   m_StepElapsedTimeUS = 0;
 }

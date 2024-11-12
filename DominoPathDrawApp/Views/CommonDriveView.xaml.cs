@@ -28,12 +28,9 @@ public partial class CommonDriveView : ContentView
 
         Ble.OnConnected += Ble_OnConnected;
         Ble.OnDisconnected += Ble_OnDisconnected;
-        //Ble.StatusData.OnMovingChanged += StatusData_OnMovingChanged;
-        //Ble.StatusData.OnDispensingChanged += StatusData_OnDispensingChanged;
-        //Ble.StatusData.OnStopOnEmptyChanged += StatusData_OnStopOnEmptyChanged;
-        Ble.StatusData.ODataChanged += StatusData_OnMovingChanged;
-        Ble.StatusData.ODataChanged += StatusData_OnDispensingChanged;
-        Ble.StatusData.ODataChanged += StatusData_OnStopOnEmptyChanged;
+        Ble.StatusData.OnDataChanged += StatusData_OnMovingChanged;
+        Ble.StatusData.OnDataChanged += StatusData_OnDispensingChanged;
+        Ble.StatusData.OnDataChanged += StatusData_OnStopOnEmptyChanged;
     }
 
     public void EnableMoving(bool enable)
@@ -47,7 +44,6 @@ public partial class CommonDriveView : ContentView
 
     private void Ble_OnConnected()
     {
-        Console.WriteLine("[CommonDriveView::Ble_OnConnected] Handle connect");
         MainThread.BeginInvokeOnMainThread(() =>
         {
             IsEnabled = true;
@@ -56,7 +52,6 @@ public partial class CommonDriveView : ContentView
 
     private void Ble_OnDisconnected()
     {
-        Console.WriteLine("[CommonDriveView::Ble_OnDisconnected] Handle disconnect");
         MainThread.BeginInvokeOnMainThread(() =>
         {
             IsEnabled = false;
@@ -65,8 +60,6 @@ public partial class CommonDriveView : ContentView
 
     private void StatusData_OnMovingChanged()
     {
-        Console.WriteLine("[CommonDriveView::StatusData_OnMovingChanged] ");
-
         MainThread.BeginInvokeOnMainThread(() =>
         {
             // If manual mode enables moving, then draw mode can't and vice versa
@@ -110,7 +103,6 @@ public partial class CommonDriveView : ContentView
         MainThread.BeginInvokeOnMainThread(() =>
         {
             StopOnEmpty.IsChecked = Ble.StatusData.StopOnEmpty;
-            Console.WriteLine($"[CommonDriveView::StatusData_OnStopOnEmptyChanged] StopOnEmpty.IsChecked={StopOnEmpty.IsChecked}, Ble.StatusData.StopOnEmpty={Ble.StatusData.StopOnEmpty}");
         });
     }
 
