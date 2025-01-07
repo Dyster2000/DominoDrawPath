@@ -3,3 +3,4 @@ DominoDrawBluetooth/.pio
 DominoPathDrawApp/.vs
 DominoPathDrawApp/bin
 DominoPathDrawApp/obj
+*.csproj.user
