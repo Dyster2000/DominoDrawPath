@@ -25,7 +25,10 @@ public partial class ScanPopup : Popup
 
     public void SetMessage(string message)
     {
-        Message.Text = message;
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            Message.Text = message;
+        });
     }
 
     private void CancelButton_Clicked(object sender, EventArgs e)

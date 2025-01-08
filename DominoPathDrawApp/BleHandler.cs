@@ -157,11 +157,13 @@ public class BleHandler
 
         _Popup = popup;
 
+#if ANDROID
         if (!await PermissionsGrantedAsync())
         {
             await _Owner.DisplayAlert("Permission required", "Application needs location permission", "OK");
             return;
         }
+#endif
 
         if ((_DominoDevice == null) && (!_bluetoothAdapter.IsScanning))
         {
