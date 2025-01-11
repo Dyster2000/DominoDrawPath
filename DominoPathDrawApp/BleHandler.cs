@@ -232,9 +232,9 @@ public class BleHandler
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            await _Owner.DisplayAlert("Error initializing", $"Error initializing UART GATT service.", "OK");
+            await _Owner.DisplayAlert("Error initializing", $"Error initializing UART GATT service. \n{ex}", "OK");
         }
     }
 
@@ -267,9 +267,9 @@ public class BleHandler
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            await _Owner.DisplayAlert("Error initializing", $"Error initializing UART GATT service.", "OK");
+            await _Owner.DisplayAlert("Error initializing", $"Error finding characteristics. \n{ex}", "OK");
         }
     }
 
