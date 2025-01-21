@@ -11,6 +11,7 @@ You should have received a copy of the GNU General Public License along with Dom
 using Plugin.BLE;
 using Plugin.BLE.Abstractions;
 using Plugin.BLE.Abstractions.Contracts;
+using System.Diagnostics;
 
 namespace DominoPathDrawApp;
 
@@ -36,6 +37,7 @@ public class BleHandler
     private Page _Owner;
     private CancellationTokenSource CancelControl;
     private readonly IAdapter _bluetoothAdapter;  // Class for the Bluetooth adapter
+    private Guid _DominoDeviceId;
     private IDevice? _DominoDevice;
     private IService? _DominoService;
     private ICharacteristic? _StatusCharacteristic;
@@ -68,7 +70,7 @@ public class BleHandler
 
         _bluetoothAdapter.DeviceConnectionLost += (o, args) =>
         {
-            HandleDisconnect();
+            TryReconnect();
         };
         _bluetoothAdapter.DeviceDisconnected += (o, args) =>
         {
@@ -95,9 +97,16 @@ public class BleHandler
         {
             lock (WriteSync)
             {
-                byte[] data = ManualCommandData.Write(manualMode);
-                _ManualControlCharacteristic.WriteType = CharacteristicWriteType.WithoutResponse;
-                _ManualControlCharacteristic.WriteAsync(data);
+                try
+                {
+                    byte[] data = ManualCommandData.Write(manualMode);
+                    _ManualControlCharacteristic.WriteType = CharacteristicWriteType.WithoutResponse;
+                    _ManualControlCharacteristic.WriteAsync(data);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[SendManualCommand] Exception writing data: {ex}");
+                }
             }
         }
     }
@@ -106,13 +115,20 @@ public class BleHandler
     {
         if (_DrawControlCharacteristic != null && _DrawControlCharacteristic.CanWrite)
         {
-            var len = DrawCommandData.DrivePath.Count;
-
-            for (int i = 0; i < len; i += DominoDrawCommandData.MaxPoints)
+            try
             {
-                var data = DrawCommandData.Write(i);
+                var len = DrawCommandData.DrivePath.Count;
 
-                await _DrawControlCharacteristic.WriteAsync(data);
+                for (int i = 0; i < len; i += DominoDrawCommandData.MaxPoints)
+                {
+                    var data = DrawCommandData.Write(i);
+
+                    await _DrawControlCharacteristic.WriteAsync(data);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[SendDrawCommand] Exception writing data: {ex}");
             }
         }
     }
@@ -181,6 +197,16 @@ public class BleHandler
         // Found robot
         await _bluetoothAdapter.StopScanningForDevicesAsync();
         await _bluetoothAdapter.ConnectToDeviceAsync(_DominoDevice);
+        await ConnectToServices();
+    }
+
+    private async Task ConnectToServices()
+    {
+        if (_DominoDevice == null)
+        {
+            return;
+        }
+
         await FindService();
         if (_DominoService != null)
         {
@@ -196,10 +222,17 @@ public class BleHandler
             // define a callback function
             _StatusCharacteristic.ValueUpdated += (o, args) =>
             {
-                var receivedBytes = args.Characteristic.Value;
+                try
+                {
+                    var receivedBytes = args.Characteristic.Value;
 
-                if (receivedBytes != null)
-                    StatusData.Read(receivedBytes);
+                    if (receivedBytes != null)
+                        StatusData.Read(receivedBytes);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[_StatusCharacteristic ValueUpdated Callback] Exception reading data: {ex}");
+                }
             };
             await _StatusCharacteristic.StartUpdatesAsync();
         }
@@ -208,6 +241,7 @@ public class BleHandler
     private void FoundRobot(IDevice device)
     {
         _Popup.SetMessage("Found Robot, looking for service");
+        _DominoDeviceId = device.Id;
         _DominoDevice = device;
         CancelControl.Cancel();
     }
@@ -296,5 +330,24 @@ public class BleHandler
             _DrawControlCharacteristic = null;
             OnDisconnected?.Invoke();
         }
+    }
+
+    private async Task TryReconnect()
+    {
+        _DominoDevice = null;
+        _DominoService = null;
+        _StatusCharacteristic = null;
+        _ManualControlCharacteristic = null;
+        _DrawControlCharacteristic = null;
+
+        OnDisconnected?.Invoke();
+
+        if (_DominoDeviceId != Guid.Empty)
+            _DominoDevice = await _bluetoothAdapter.ConnectToKnownDeviceAsync(_DominoDeviceId);
+        if (_DominoDevice != null)
+            await ConnectToServices();
+
+        if (_StatusCharacteristic != null)
+            OnConnected?.Invoke();
     }
 }
