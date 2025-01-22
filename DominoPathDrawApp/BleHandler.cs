@@ -12,6 +12,7 @@ using Plugin.BLE;
 using Plugin.BLE.Abstractions;
 using Plugin.BLE.Abstractions.Contracts;
 using System.Diagnostics;
+using System.Xml.Linq;
 
 namespace DominoPathDrawApp;
 
@@ -61,6 +62,7 @@ public class BleHandler
             {
                 var name = foundBleDevice.Device.Name;
 
+                Debug.WriteLine($"[DeviceDiscovered] Found device {name}:{foundBleDevice.Device.Id}");
                 if (name == DEVICE_NAME)
                 {
                     FoundRobot(foundBleDevice.Device);
@@ -70,10 +72,12 @@ public class BleHandler
 
         _bluetoothAdapter.DeviceConnectionLost += (o, args) =>
         {
+            Debug.WriteLine($"[DeviceConnectionLost] Device {args.Device.Name}:{args.Device.Id}");
             TryReconnect();
         };
         _bluetoothAdapter.DeviceDisconnected += (o, args) =>
         {
+            Debug.WriteLine($"[DeviceDisconnected] Device {args.Device.Name}:{args.Device.Id}");
             HandleDisconnect();
         };
     }
@@ -150,14 +154,24 @@ public class BleHandler
     public void CancelScan()
     {
         if (CancelControl != null)
+        {
+            Debug.WriteLine($"[CancelScan] Cancel scan");
             CancelControl.Cancel();
+        }
+        else
+            Debug.WriteLine($"[CancelScan] CancelControl is null");
     }
 
     public async Task Disconnect()
     {
         if (!IsConnected)
+        {
+            Debug.WriteLine($"[Disconnect] Not connected");
             return;
+        }
 
+        Debug.WriteLine($"[Disconnect] Call DisconnectDeviceAsync()");
+        Debug.WriteLine($"[Disconnect] _DominoDevice={_DominoDevice.Name}:{_DominoDevice.Id}");
         await _bluetoothAdapter.DisconnectDeviceAsync(_DominoDevice);
         _DominoDevice = null;
         _DominoService = null;
@@ -169,8 +183,12 @@ public class BleHandler
     public async Task Scan(ScanPopup popup)           // Function that is called when the scanButton is pressed
     {
         if (IsConnected)
+        {
+            Debug.WriteLine("[Scan] Trivial exit, already connected");
             return;
+        }
 
+        Debug.WriteLine("[Scan] Enter");
         _Popup = popup;
 
 #if ANDROID
@@ -183,14 +201,17 @@ public class BleHandler
 
         if (_DominoDeviceId == Guid.Empty)
         {
-            if ((_DominoDevice == null) && (!_bluetoothAdapter.IsScanning))
+            if (!_bluetoothAdapter.IsScanning)
             {
+                Debug.WriteLine("[Scan] _DominoDeviceId not set, start scan");
                 ScanFilterOptions scanOptions = new ScanFilterOptions();
                 scanOptions.DeviceNames = [DEVICE_NAME];
                 CancelControl = new CancellationTokenSource();
 
                 await _bluetoothAdapter.StartScanningForDevicesAsync(scanOptions, null, false, CancelControl.Token);
             }
+            else
+                Debug.WriteLine("[Scan] _DominoDeviceId not set, _bluetoothAdapter.IsScanning already true");
             if (_DominoDevice == null)
             {
                 _Popup = null;
@@ -200,8 +221,14 @@ public class BleHandler
             // Found robot
             await _bluetoothAdapter.StopScanningForDevicesAsync();
         }
+        else
+        {
+            Debug.WriteLine($"[Scan] _DominoDeviceId already found as {_DominoDeviceId}");
+        }
+        Debug.WriteLine("[Scan] Call ConnectToServices()");
         if (!await ConnectToServices())
         {
+            Debug.WriteLine("[Scan] ConnectToServices failed");
             _DominoDevice = null;
             _DominoService = null;
             _StatusCharacteristic = null;
@@ -214,19 +241,36 @@ public class BleHandler
 
     private async Task<bool> ConnectToServices()
     {
-        if (_DominoDeviceId != Guid.Empty)
-            _DominoDevice = await _bluetoothAdapter.ConnectToKnownDeviceAsync(_DominoDeviceId);
+        if (_DominoDeviceId == Guid.Empty)
+        {
+            Debug.WriteLine($"[ConnectToServices] _DominoDeviceId not set, abort()");
+            return false;
+        }
+
+        Debug.WriteLine($"[ConnectToServices] Call ConnectToKnownDeviceAsync({_DominoDeviceId})");
+        _DominoDevice = await _bluetoothAdapter.ConnectToKnownDeviceAsync(_DominoDeviceId);
         if (_DominoDevice == null)
         {
             Debug.WriteLine($"[ConnectToServices] Failed to connect to robot");
             return false;
         }
+        Debug.WriteLine($"[ConnectToServices] Returned from ConnectToKnownDeviceAsync()");
+        Debug.WriteLine($"[ConnectToServices] _DominoDevice={_DominoDevice.Name}:{_DominoDevice.Id}");
 
+        Debug.WriteLine($"[ConnectToServices] Call FindService()");
         if (!await FindService())
+        {
+            Debug.WriteLine($"[ConnectToServices] FindService() failed");
             return false;
+        }
+        Debug.WriteLine($"[ConnectToServices] Call FindCharacteristics()");
         if (!await FindCharacteristics())
+        {
+            Debug.WriteLine($"[ConnectToServices] FindCharacteristics() failed");
             return false;
+        }
 
+        Debug.WriteLine($"[ConnectToServices] Finished connecting");
         CancelControl = null;
         StatusData.JustConnected = true;
         OnConnected?.Invoke();
@@ -256,6 +300,7 @@ public class BleHandler
 
     private void FoundRobot(IDevice device)
     {
+        Debug.WriteLine($"[FoundRobot] Found {device.Name}:{device.Id}");
         _Popup.SetMessage("Found Robot, looking for service");
         _DominoDeviceId = device.Id;
         CancelControl.Cancel();
@@ -265,24 +310,35 @@ public class BleHandler
     {
         if (_DominoDevice == null)
         {
+            Debug.WriteLine($"[FindService] _DominoDevice is null");
             await _Owner.DisplayAlert("Error connecting", "[FindService] Device is null", "OK");
             return false;
         }
         try
         {
+            Debug.WriteLine($"[FindService] Call _DominoDevice.GetServicesAsync()");
             var servicesListReadOnly = await _DominoDevice.GetServicesAsync();
 
+            Debug.WriteLine($"[FindService] Found {servicesListReadOnly.Count} services");
             for (int i = 0; i < servicesListReadOnly.Count; i++)
             {
                 if (servicesListReadOnly[i].Id == SERVICE_UUID)
                 {
+                    Debug.WriteLine($"[FindService] Found domino service {servicesListReadOnly[i].Name}:{servicesListReadOnly[i].Id}");
                     _DominoService = servicesListReadOnly[i];
                     if (_Popup != null)
                         _Popup.SetMessage("Found Service");
                     break;
                 }
+                else
+                    Debug.WriteLine($"[FindService] Found other service {servicesListReadOnly[i].Name}:{servicesListReadOnly[i].Id}");
             }
             return true;
+        }
+        catch (ObjectDisposedException ex)
+        {
+            Debug.WriteLine($"[FindService] Caught ObjectDisposedException");
+            Debug.WriteLine($"[FindService] {ex}");
         }
         catch (Exception ex)
         {
@@ -295,35 +351,48 @@ public class BleHandler
     {
         if (_DominoService == null)
         {
+            Debug.WriteLine($"[FindCharacteristics] _DominoService is null");
             await _Owner.DisplayAlert("Error connecting", "[FindCharacteristics] Device is null", "OK");
             return false;
         }
         try
         {
+            Debug.WriteLine($"[FindCharacteristics] Call _DominoService.GetCharacteristicsAsync()");
             var charListReadOnly = await _DominoService.GetCharacteristicsAsync();
 
+            Debug.WriteLine($"[FindCharacteristics] Found {charListReadOnly.Count} characteristics");
             for (int i = 0; i < charListReadOnly.Count; i++)
             {
                 if (charListReadOnly[i].Id == STATUS_CHARACTERISTIC_UUID)
                 {
+                    Debug.WriteLine($"[FindService] Found status characteristic {charListReadOnly[i].Name}:{charListReadOnly[i].Id}");
                     if (_Popup != null)
                         _Popup.SetMessage("Found Status Characteristics");
                     _StatusCharacteristic = charListReadOnly[i];
                 }
                 else if (charListReadOnly[i].Id == MANUAL_CONTROL_CHARACTERISTIC_UUID)
                 {
+                    Debug.WriteLine($"[FindService] Found manual characteristic {charListReadOnly[i].Name}:{charListReadOnly[i].Id}");
                     if (_Popup != null)
                         _Popup.SetMessage("Found Manual Control Characteristics");
                     _ManualControlCharacteristic = charListReadOnly[i];
                 }
                 else if (charListReadOnly[i].Id == DRAW_CONTROL_CHARACTERISTIC_UUID)
                 {
+                    Debug.WriteLine($"[FindService] Found draw characteristic {charListReadOnly[i].Name}:{charListReadOnly[i].Id}");
                     if (_Popup != null)
                         _Popup.SetMessage("Found Draw Control Characteristics");
                     _DrawControlCharacteristic = charListReadOnly[i];
                 }
+                else
+                    Debug.WriteLine($"[FindService] Found other characteristic {charListReadOnly[i].Name}:{charListReadOnly[i].Id}");
             }
             return true;
+        }
+        catch (ObjectDisposedException ex)
+        {
+            Debug.WriteLine($"[FindCharacteristics] Caught ObjectDisposedException");
+            Debug.WriteLine($"[FindCharacteristics] {ex}");
         }
         catch (Exception ex)
         {
@@ -348,38 +417,47 @@ public class BleHandler
     {
         if (IsConnected)
         {
+            Debug.WriteLine($"[HandleDisconnect] Set all to null");
             _DominoDevice = null;
             _DominoService = null;
             _StatusCharacteristic = null;
             _ManualControlCharacteristic = null;
             _DrawControlCharacteristic = null;
+            Debug.WriteLine($"[HandleDisconnect] Trigger OnDisconnected");
             OnDisconnected?.Invoke();
         }
+        else
+            Debug.WriteLine($"[HandleDisconnect] _DominoDevice is already null");
     }
 
     private async Task TryReconnect()
     {
-        _DominoDevice = null;
-        _DominoService = null;
-        _StatusCharacteristic = null;
-        _ManualControlCharacteristic = null;
-        _DrawControlCharacteristic = null;
-
-        OnDisconnected?.Invoke();
-
-        if (_DominoDeviceId != Guid.Empty)
-            _DominoDevice = await _bluetoothAdapter.ConnectToKnownDeviceAsync(_DominoDeviceId);
-        if (_DominoDevice != null)
+        if (IsConnected)
         {
-            if (!await ConnectToServices())
-            {
-                _DominoDevice = null;
-                _DominoService = null;
-                _StatusCharacteristic = null;
-                _ManualControlCharacteristic = null;
-                _DrawControlCharacteristic = null;
-                await _Owner.DisplayAlert("Error connecting", "Failed to reconnect to robot", "OK");
-            }
+            Debug.WriteLine($"[TryReconnect] Set all to null");
+            _DominoDevice = null;
+            _DominoService = null;
+            _StatusCharacteristic = null;
+            _ManualControlCharacteristic = null;
+            _DrawControlCharacteristic = null;
+            Debug.WriteLine($"[TryReconnect] Trigger OnDisconnected");
+            OnDisconnected?.Invoke();
         }
+        else
+            Debug.WriteLine($"[TryReconnect] _DominoDevice is already null");
+
+        Debug.WriteLine($"[TryReconnect] Call ConnectToServices()");
+        if (!await ConnectToServices())
+        {
+            Debug.WriteLine($"[TryReconnect] ConnectToServices() returned false");
+            _DominoDevice = null;
+            _DominoService = null;
+            _StatusCharacteristic = null;
+            _ManualControlCharacteristic = null;
+            _DrawControlCharacteristic = null;
+            await _Owner.DisplayAlert("Error connecting", "Failed to reconnect to robot", "OK");
+        }
+        else
+            Debug.WriteLine($"[TryReconnect] ConnectToServices() returned true");
     }
 }
