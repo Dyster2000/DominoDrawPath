@@ -181,37 +181,51 @@ public class BleHandler
         }
 #endif
 
-        if ((_DominoDevice == null) && (!_bluetoothAdapter.IsScanning))
+        if (_DominoDeviceId == Guid.Empty)
         {
-            ScanFilterOptions scanOptions = new ScanFilterOptions();
-            scanOptions.DeviceNames = [DEVICE_NAME];
-            CancelControl = new CancellationTokenSource();
+            if ((_DominoDevice == null) && (!_bluetoothAdapter.IsScanning))
+            {
+                ScanFilterOptions scanOptions = new ScanFilterOptions();
+                scanOptions.DeviceNames = [DEVICE_NAME];
+                CancelControl = new CancellationTokenSource();
 
-            await _bluetoothAdapter.StartScanningForDevicesAsync(scanOptions, null, false, CancelControl.Token);
+                await _bluetoothAdapter.StartScanningForDevicesAsync(scanOptions, null, false, CancelControl.Token);
+            }
+            if (_DominoDevice == null)
+            {
+                _Popup = null;
+                CancelControl = null;
+                return;
+            }
+            // Found robot
+            await _bluetoothAdapter.StopScanningForDevicesAsync();
         }
-        if (_DominoDevice == null)
+        if (!await ConnectToServices())
         {
-            CancelControl = null;
-            return;
+            _DominoDevice = null;
+            _DominoService = null;
+            _StatusCharacteristic = null;
+            _ManualControlCharacteristic = null;
+            _DrawControlCharacteristic = null;
+            await _Owner.DisplayAlert("Error connecting", "Failed to connect to robot", "OK");
         }
-        // Found robot
-        await _bluetoothAdapter.StopScanningForDevicesAsync();
-        await _bluetoothAdapter.ConnectToDeviceAsync(_DominoDevice);
-        await ConnectToServices();
+        _Popup = null;
     }
 
-    private async Task ConnectToServices()
+    private async Task<bool> ConnectToServices()
     {
+        if (_DominoDeviceId != Guid.Empty)
+            _DominoDevice = await _bluetoothAdapter.ConnectToKnownDeviceAsync(_DominoDeviceId);
         if (_DominoDevice == null)
         {
-            return;
+            Debug.WriteLine($"[ConnectToServices] Failed to connect to robot");
+            return false;
         }
 
-        await FindService();
-        if (_DominoService != null)
-        {
-            await FindCharacteristics();
-        }
+        if (!await FindService())
+            return false;
+        if (!await FindCharacteristics())
+            return false;
 
         CancelControl = null;
         StatusData.JustConnected = true;
@@ -236,21 +250,23 @@ public class BleHandler
             };
             await _StatusCharacteristic.StartUpdatesAsync();
         }
+
+        return true;
     }
 
     private void FoundRobot(IDevice device)
     {
         _Popup.SetMessage("Found Robot, looking for service");
         _DominoDeviceId = device.Id;
-        _DominoDevice = device;
         CancelControl.Cancel();
     }
 
-    protected async Task FindService()
+    protected async Task<bool> FindService()
     {
         if (_DominoDevice == null)
         {
-            throw new ArgumentNullException(nameof(_DominoDevice), "Parameter cannot be null");
+            await _Owner.DisplayAlert("Error connecting", "[FindService] Device is null", "OK");
+            return false;
         }
         try
         {
@@ -261,22 +277,26 @@ public class BleHandler
                 if (servicesListReadOnly[i].Id == SERVICE_UUID)
                 {
                     _DominoService = servicesListReadOnly[i];
-                    _Popup.SetMessage("Found Service");
+                    if (_Popup != null)
+                        _Popup.SetMessage("Found Service");
                     break;
                 }
             }
+            return true;
         }
         catch (Exception ex)
         {
-            await _Owner.DisplayAlert("Error initializing", $"Error initializing UART GATT service. \n{ex}", "OK");
+            await _Owner.DisplayAlert("Error initializing", $"Error finding services. \n{ex}", "OK");
         }
+        return false;
     }
 
-    protected async Task FindCharacteristics()
+    protected async Task<bool> FindCharacteristics()
     {
         if (_DominoService == null)
         {
-            throw new ArgumentNullException(nameof(_DominoDevice), "Parameter cannot be null");
+            await _Owner.DisplayAlert("Error connecting", "[FindCharacteristics] Device is null", "OK");
+            return false;
         }
         try
         {
@@ -286,25 +306,30 @@ public class BleHandler
             {
                 if (charListReadOnly[i].Id == STATUS_CHARACTERISTIC_UUID)
                 {
-                    _Popup.SetMessage("Found Status Characteristics");
+                    if (_Popup != null)
+                        _Popup.SetMessage("Found Status Characteristics");
                     _StatusCharacteristic = charListReadOnly[i];
                 }
                 else if (charListReadOnly[i].Id == MANUAL_CONTROL_CHARACTERISTIC_UUID)
                 {
-                    _Popup.SetMessage("Found Manual Control Characteristics");
+                    if (_Popup != null)
+                        _Popup.SetMessage("Found Manual Control Characteristics");
                     _ManualControlCharacteristic = charListReadOnly[i];
                 }
                 else if (charListReadOnly[i].Id == DRAW_CONTROL_CHARACTERISTIC_UUID)
                 {
-                    _Popup.SetMessage("Found Draw Control Characteristics");
+                    if (_Popup != null)
+                        _Popup.SetMessage("Found Draw Control Characteristics");
                     _DrawControlCharacteristic = charListReadOnly[i];
                 }
             }
+            return true;
         }
         catch (Exception ex)
         {
             await _Owner.DisplayAlert("Error initializing", $"Error finding characteristics. \n{ex}", "OK");
         }
+        return false;
     }
 
     private async Task<bool> PermissionsGrantedAsync()
@@ -345,9 +370,16 @@ public class BleHandler
         if (_DominoDeviceId != Guid.Empty)
             _DominoDevice = await _bluetoothAdapter.ConnectToKnownDeviceAsync(_DominoDeviceId);
         if (_DominoDevice != null)
-            await ConnectToServices();
-
-        if (_StatusCharacteristic != null)
-            OnConnected?.Invoke();
+        {
+            if (!await ConnectToServices())
+            {
+                _DominoDevice = null;
+                _DominoService = null;
+                _StatusCharacteristic = null;
+                _ManualControlCharacteristic = null;
+                _DrawControlCharacteristic = null;
+                await _Owner.DisplayAlert("Error connecting", "Failed to reconnect to robot", "OK");
+            }
+        }
     }
 }
