@@ -67,6 +67,7 @@ public class BleHandler
                 {
                     FoundRobot(foundBleDevice.Device);
                 }
+                foundBleDevice.Device.Dispose();
             }
         };
 
@@ -209,17 +210,21 @@ public class BleHandler
                 CancelControl = new CancellationTokenSource();
 
                 await _bluetoothAdapter.StartScanningForDevicesAsync(scanOptions, null, false, CancelControl.Token);
+                await _bluetoothAdapter.StopScanningForDevicesAsync();
+                if (_DominoDeviceId != Guid.Empty)
+                    Debug.WriteLine($"[Scan] Robot found with ID {_DominoDeviceId}");
+                else
+                    Debug.WriteLine($"[Scan] Robot NOT found");
             }
             else
                 Debug.WriteLine("[Scan] _DominoDeviceId not set, _bluetoothAdapter.IsScanning already true");
-            if (_DominoDevice == null)
+            if (_DominoDeviceId == Guid.Empty)
             {
+                Debug.WriteLine($"[Scan] _DominoDeviceId is NOT set");
                 _Popup = null;
                 CancelControl = null;
                 return;
             }
-            // Found robot
-            await _bluetoothAdapter.StopScanningForDevicesAsync();
         }
         else
         {
